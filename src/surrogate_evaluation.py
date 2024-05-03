@@ -19,6 +19,7 @@ import argparse
 import yaml
 import logging
 import csv
+from scipy.stats import kendalltau
 
 from explain import load_explainer
 
@@ -76,10 +77,12 @@ def load_surrogate(model_name, model_path, device,
 
     print("Correlation of logits:", surrogate_faithfulness_logits(model_logits, surrogate_logits))
     print("Correlation of prediction:", surrogate_faithfulness_prediction(model_predictions, surrogate_predictions))
+    print("Kendall tau-rank correlation of logits:", surrogate_faithfulness_logits_kendall(model_logits, surrogate_logits))
 
     results_dict = [{"Metric": "Cosine similarity of weight matrices", "Score": surrogate_faithfulness_cosine(model_weights, surrogate_weights)},
                     {"Metric": "Correlation of logits", "Score": surrogate_faithfulness_logits(model_logits, surrogate_logits)},
-                    {"Metric": "Correlation of prediction", "Score": surrogate_faithfulness_prediction(model_predictions, surrogate_predictions)}]
+                    {"Metric": "Correlation of prediction", "Score": surrogate_faithfulness_prediction(model_predictions, surrogate_predictions)},
+                    {"Metric": "Kendall tau-rank correlation of logits", "Score": surrogate_faithfulness_logits_kendall(model_logits, surrogate_logits)}]
     with open(os.path.join(save_dir ,"results.csv"), "w") as file: 
         writer = csv.DictWriter(file, fieldnames = ['Metric', 'Score'])
         writer.writeheader()
@@ -96,6 +99,13 @@ def surrogate_faithfulness_logits(model_logits, surrogate_logits):
     
 def surrogate_faithfulness_prediction(model_predictions, surrogate_predictions):
     score = matthews_corrcoef(model_predictions.numpy(), surrogate_predictions.numpy())
+    return score
+
+#def surrogate_test_accuracy()
+
+# kendall tau-rank used in "Faithful and Efficient Explanations for NNs via Neural Tangent Kernel Surrogate Models"
+def surrogate_faithfulness_logits_kendall(model_logits, surrogate_logits):
+    score = np.average([kendalltau(model_logits[i,:].argsort(descending=True).numpy(), surrogate_logits[i,:].argsort(descending=True).numpy()).statistic for i in range(len(model_logits))])
     return score
 
 # talk to Galip how to get weight vector and bias vector from surrogate
