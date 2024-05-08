@@ -92,12 +92,20 @@ class AWA(VisionDataset):
         #test_label = np.squeeze(np.load(os.path.join(root, 'AWA_val_label.npy')))
         #self.data = np.concatenate((val_input, test_input), axis=0) #TOO LARGE :( MAKE THIS SMALLER?
         #self.targets = np.concatenate((val_label, test_label), axis=0)
+
+        
         self.data = np.empty(shape=(37322,3,224,224), dtype=np.float32) #CHANGE SIZE WHEN USING LESS DATA, STILL TO LARGE
         self.targets = np.empty(shape=(37322))
         self.data[:29870,:,:,:] = np.squeeze(np.load(os.path.join(root, 'AWA_train_input.npy')))
         self.targets[:29870] = np.squeeze(np.load(os.path.join(root, 'AWA_train_label.npy')))
         self.data[29870:,:,:,:] = np.squeeze(np.load(os.path.join(root, 'AWA_val_input.npy')))
-        self.data[29870:] = np.squeeze(np.load(os.path.join(root, 'AWA_val_label.npy')))
+        self.targets[29870:] = np.squeeze(np.load(os.path.join(root, 'AWA_val_label.npy')))
+        '''
+        self.data = np.empty(shape=(37322-29870,3,224,224), dtype=np.float32) #CHANGE SIZE WHEN USING LESS DATA, STILL TO LARGE
+        self.targets = np.empty(shape=(37322-29870))
+        self.data[:,:,:,:] = np.squeeze(np.load(os.path.join(root, 'AWA_val_input.npy')))
+        self.targets[:] = np.squeeze(np.load(os.path.join(root, 'AWA_val_label.npy')))
+        '''
         
         N = len(self.targets)
 

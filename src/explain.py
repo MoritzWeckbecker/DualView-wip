@@ -1,7 +1,7 @@
 import argparse
 import torch
 from utils import xplain
-from explainers import DualView, RepresenterPointsExplainer, SimilarityExplainer, RPSimilarityExplainer, InfluenceFunctionExplainer
+from explainers import DualView, RepresenterPointsExplainer, SimilarityExplainer, RPSimilarityExplainer, InfluenceFunctionExplainer, InnerProductExplainer
 from utils.data import load_datasets_reduced
 from utils.models import load_model, load_cifar_model, load_awa_model
 import yaml
@@ -14,7 +14,8 @@ def load_explainer(xai_method, model_path, save_dir, dataset_name):
               'similarity':(SimilarityExplainer,{}),
               'rp_similarity':(RPSimilarityExplainer, {"dir":save_dir, 'dimensions':128}),
               'dualview':(DualView, {"dir": save_dir}),
-              'influence': (InfluenceFunctionExplainer, {'recursion_depth':50, 'r':1200} if dataset_name=="MNIST" else {'recursion_depth':50, 'r':1000})
+              'influence': (InfluenceFunctionExplainer, {'recursion_depth':50, 'r':1200} if dataset_name=="MNIST" else {'recursion_depth':50, 'r':1000}),
+              'inner_product': (InnerProductExplainer, {})
     }
     return explainers[xai_method]
 
