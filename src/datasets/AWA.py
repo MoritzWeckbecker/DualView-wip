@@ -97,7 +97,7 @@ class AWA(VisionDataset):
         self.data[:29870,:,:,:] = np.squeeze(np.load(os.path.join(root, 'AWA_train_input.npy')))
         self.targets[:29870] = np.squeeze(np.load(os.path.join(root, 'AWA_train_label.npy')))
         self.data[29870:,:,:,:] = np.squeeze(np.load(os.path.join(root, 'AWA_val_input.npy')))
-        self.data[29870:] = np.squeeze(np.load(os.path.join(root, 'AWA_val_label.npy')))
+        self.targets[29870:] = np.squeeze(np.load(os.path.join(root, 'AWA_val_label.npy')))
         
         N = len(self.targets)
 
