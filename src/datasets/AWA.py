@@ -63,7 +63,7 @@ class AWA(VisionDataset):
     default_class_groups = [[i] for i in range(50)]
     name = 'AWA'
     #default_transform = transforms.Compose([transforms.ToTensor()])
-    default_transform = transforms.Compose([transforms.ToTensor()])
+    default_transform = transforms.Compose([])
     inverse_transform = transforms.Compose([])
     
     def __init__(
