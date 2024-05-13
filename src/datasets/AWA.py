@@ -92,7 +92,7 @@ class AWA(VisionDataset):
         #test_label = np.squeeze(np.load(os.path.join(root, 'AWA_val_label.npy')))
         #self.data = np.concatenate((val_input, test_input), axis=0) #TOO LARGE :( MAKE THIS SMALLER?
         #self.targets = np.concatenate((val_label, test_label), axis=0)
-        self.data = np.empty(shape=(37322,3,224,224), dtype=np.float32) #CHANGE SIZE WHEN USING LESS DATA, STILL TO LARGE
+        self.data = np.empty(shape=(37322,3,224,224), dtype=np.uint8) #CHANGE SIZE WHEN USING LESS DATA, STILL TO LARGE
         self.targets = np.empty(shape=(37322))
         self.data[:29870,:,:,:] = np.squeeze(np.load(os.path.join(root, 'AWA_train_input.npy')))
         self.targets[:29870] = np.squeeze(np.load(os.path.join(root, 'AWA_train_label.npy')))
@@ -127,7 +127,8 @@ class AWA(VisionDataset):
         else:
             id=self.test_ids[item]
         img, target = self.data[id], self.targets[id]
-        img = Image.fromarray(img)
+        #img = Image.fromarray(img)
+        img = torch.from_numpy(img)
         if self.transform is not None:
             img = self.transform(img)
         if self.target_transform is not None:
