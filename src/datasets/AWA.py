@@ -62,6 +62,7 @@ class_labels = list(class_names.values())
 class AWA(VisionDataset):
     default_class_groups = [[i] for i in range(50)]
     name = 'AWA'
+    #default_transform = transforms.Compose([transforms.ToTensor()])
     default_transform = transforms.Compose([transforms.ToTensor()])
     inverse_transform = transforms.Compose([])
     
@@ -128,7 +129,7 @@ class AWA(VisionDataset):
             id=self.test_ids[item]
         img, target = self.data[id], self.targets[id]
         #img = Image.fromarray(img)
-        #img = torch.from_numpy(img)
+        img = torch.from_numpy(img)
         if self.transform is not None:
             img = self.transform(img)
         if self.target_transform is not None:
