@@ -115,14 +115,12 @@ class AWA(VisionDataset):
         self.inverse_transform=inv_transform #MUST HAVE THIS FOR MARK DATASET TO WORK
         self.classes=[i for i in range(50)]
 
-        self.data = np.empty(shape=(37322,3,224,224), dtype=np.float32) 
+        self.data = np.empty(shape=(37322,3,224,224), dtype=np.uint8) 
         self.targets = np.empty(shape=(37322))
-        self.data[:29870,:,:,:] = np.squeeze(np.load(os.path.join(root, 'AWA_train_input.npy')))
+        self.data[:29870,:,:,:] = self.normalized_to_uint8(np.squeeze(np.load(os.path.join(root, 'AWA_train_input.npy'))))
         self.targets[:29870] = np.squeeze(np.load(os.path.join(root, 'AWA_train_label.npy')))
-        self.data[29870:,:,:,:] = np.squeeze(np.load(os.path.join(root, 'AWA_val_input.npy')))
+        self.data[29870:,:,:,:] = self.normalized_to_uint8(np.squeeze(np.load(os.path.join(root, 'AWA_val_input.npy'))))
         self.targets[29870:] = np.squeeze(np.load(os.path.join(root, 'AWA_val_label.npy')))
-
-        self.data = self.normalized_to_uint8(self.data)
 
         # Recalculating max and min in each channel
         #print("Dimension 0")
