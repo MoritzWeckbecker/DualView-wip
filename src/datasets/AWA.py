@@ -62,19 +62,18 @@ class_labels = list(class_names.values())
 class AWA(VisionDataset):
     default_class_groups = [[i] for i in range(50)]
     name = 'AWA'
-    # data was normalised before and turned back into uint8 by transformation in each channel: data -> (data - data_min) * 255 / (data_max - data_min)
-    # new mean: (0 - data_min) / (data_max - data_min) * 255
-    # new std: 255 / (data_max - data_min)
+    # data was normalised before and turned back into uint8 by transformation in each channel: data -> (data - data_min) / (data_max - data_min)
+    # new mean: (0 - data_min) / (data_max - data_min)
+    # new std: 1 / (data_max - data_min)
     d0_max = 2.2489083
     d0_min = -2.117904
     d1_max = 2.4285715
     d1_min = -2.0357141
     d2_max = 2.64
     d2_min = -1.8044444
-    mean = -255 * np.array([d0_min / (d0_max - d0_min), d1_min / (d1_max - d1_min), d2_min / (d2_max - d2_min)])
-    std = 255 / np.array([d0_max - d0_min, d1_max - d1_min, d2_max -d2_min])
+    mean = -np.array([d0_min / (d0_max - d0_min), d1_min / (d1_max - d1_min), d2_min / (d2_max - d2_min)])
+    std = 1 / np.array([d0_max - d0_min, d1_max - d1_min, d2_max -d2_min])
     default_transform = transforms.Compose([
-        transforms.ToTensor(),
         transforms.Normalize(tuple(mean), tuple(std))
     ])
     inverse_transform = transforms.Compose([
@@ -83,15 +82,14 @@ class AWA(VisionDataset):
     ])
 
     @staticmethod
-    def normalized_to_uint8(data, d0_max=d0_max, d0_min=d0_min, d1_max=d1_max, d1_min=d1_min, d2_max=d2_max, d2_min=d2_min):
+    def to_0_1(data, d0_max=d0_max, d0_min=d0_min, d1_max=d1_max, d1_min=d1_min, d2_max=d2_max, d2_min=d2_min):
         # function to unnormalize and turn into uint8
         data[:,0,:,:] -= d0_min
         data[:,1,:,:] -= d1_min
         data[:,2,:,:] -= d2_min
-        data[:,0,:,:] *= 255 / (d0_max - d0_min)
-        data[:,1,:,:] *= 255 / (d1_max - d1_min)
-        data[:,2,:,:] *= 255 / (d2_max - d2_min)
-        data = data.astype(np.uint8, copy=False)
+        data[:,0,:,:] /= (d0_max - d0_min)
+        data[:,1,:,:] /= (d1_max - d1_min)
+        data[:,2,:,:] /= (d2_max - d2_min)
         return data
     
     def __init__(
@@ -115,12 +113,16 @@ class AWA(VisionDataset):
         self.inverse_transform=inv_transform #MUST HAVE THIS FOR MARK DATASET TO WORK
         self.classes=[i for i in range(50)]
 
-        self.data = np.empty(shape=(37322,3,224,224), dtype=np.uint8) 
+        self.data = np.empty(shape=(37322,3,224,224), dtype=np.float32) 
         self.targets = np.empty(shape=(37322))
         self.data[:29870,:,:,:] = self.normalized_to_uint8(np.squeeze(np.load(os.path.join(root, 'AWA_train_input.npy'))))
         self.targets[:29870] = np.squeeze(np.load(os.path.join(root, 'AWA_train_label.npy')))
         self.data[29870:,:,:,:] = self.normalized_to_uint8(np.squeeze(np.load(os.path.join(root, 'AWA_val_input.npy'))))
         self.targets[29870:] = np.squeeze(np.load(os.path.join(root, 'AWA_val_label.npy')))
+        '''
+        self.data = self.to_0_1(np.squeeze(np.load(os.path.join(root, 'AWA_val_input.npy'))))
+        self.targets = np.squeeze(np.load(os.path.join(root, 'AWA_val_label.npy')))
+        '''
 
         # Recalculating max and min in each channel
         #print("Dimension 0")
@@ -161,16 +163,11 @@ class AWA(VisionDataset):
         else:
             id=self.test_ids[item]
         img, target = self.data[id], self.targets[id]
-        #img = Image.fromarray(img)
-        #img = torch.from_numpy(img)
-        print(img.mean())
-        print(img.std())
+        img = torch.from_numpy(img)
         if self.transform is not None:
             img = self.transform(img)
         if self.target_transform is not None:
             target = self.target_transform(target)
-        print(img.mean())
-        print(img.std())
         return img, target
     
     def __len__(self):
