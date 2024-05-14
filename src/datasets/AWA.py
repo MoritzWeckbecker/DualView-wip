@@ -62,9 +62,17 @@ class_labels = list(class_names.values())
 class AWA(VisionDataset):
     default_class_groups = [[i] for i in range(50)]
     name = 'AWA'
-    #default_transform = transforms.Compose([transforms.ToTensor()])
+    # data was normalised before and turned back into uint8 by transformation in each channel: data -> (data - data_min) / (data_max - data_min)
     default_transform = transforms.Compose([])
     inverse_transform = transforms.Compose([])
+
+    @staticmethod
+    def normalized_to_uint8(data, d_max, d_min):
+        # function to unnormalize and turn into uint8
+        data -= d_min
+        data *= (255/(d_max - d_min))
+        data = data.astype(np.uint8, copy=False)
+        return data
     
     def __init__(
         self,
@@ -99,6 +107,16 @@ class AWA(VisionDataset):
         self.targets[:29870] = np.squeeze(np.load(os.path.join(root, 'AWA_train_label.npy')))
         self.data[29870:,:,:,:] = np.squeeze(np.load(os.path.join(root, 'AWA_val_input.npy')))
         self.targets[29870:] = np.squeeze(np.load(os.path.join(root, 'AWA_val_label.npy')))
+
+        print("Dimension 0")
+        print(self.data[:,0,:,:].max())
+        print(self.data[:,0,:,:].min())
+        print("Dimension 1")
+        print(self.data[:,1,:,:].max())
+        print(self.data[:,1,:,:].min())
+        print("Dimension 2")
+        print(self.data[:,2,:,:].max())
+        print(self.data[:,2,:,:].min())
         
         N = len(self.targets)
 
