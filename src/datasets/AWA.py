@@ -115,9 +115,9 @@ class AWA(VisionDataset):
 
         self.data = np.empty(shape=(37322,3,224,224), dtype=np.float32) 
         self.targets = np.empty(shape=(37322))
-        self.data[:29870,:,:,:] = self.normalized_to_uint8(np.squeeze(np.load(os.path.join(root, 'AWA_train_input.npy'))))
+        self.data[:29870,:,:,:] = self.to_0_1(np.squeeze(np.load(os.path.join(root, 'AWA_train_input.npy'))))
         self.targets[:29870] = np.squeeze(np.load(os.path.join(root, 'AWA_train_label.npy')))
-        self.data[29870:,:,:,:] = self.normalized_to_uint8(np.squeeze(np.load(os.path.join(root, 'AWA_val_input.npy'))))
+        self.data[29870:,:,:,:] = self.to_0_1(np.squeeze(np.load(os.path.join(root, 'AWA_val_input.npy'))))
         self.targets[29870:] = np.squeeze(np.load(os.path.join(root, 'AWA_val_label.npy')))
         '''
         self.data = self.to_0_1(np.squeeze(np.load(os.path.join(root, 'AWA_val_input.npy'))))
