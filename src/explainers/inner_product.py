@@ -60,6 +60,7 @@ class CosineFeatureKernelExplainer(Explainer):
 
 # same as FeatureKernelExplainer, but with negative of l2 distance instead
 class DistanceFeatureKernelExplainer(Explainer):
+    name="DistanceFeatureKernelExplainer"
     @staticmethod #not nice but does the job
     def distance_norm(t1,t2,p=2):
         t_out = torch.empty(size=(t1.shape[0],t2.shape[0]))
@@ -90,7 +91,6 @@ class DistanceFeatureKernelExplainer(Explainer):
         return (features - self.mean) / self.stdvar
 
     def explain(self, x, preds=None, targets=None):
-        assert self.coefficients is not None
         x = x.to(self.device)
         f = self.model.features(x)
         if self.normalize:
