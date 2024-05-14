@@ -71,8 +71,8 @@ class AWA(VisionDataset):
     d1_min = -2.0357141
     d2_max = 2.64
     d2_min = -1.8044444
-    mean = -255 * np.array([d0_min / (d0_max - d0_min), d1_min / (d1_max - d1_min), d2_min / (d2_max - d2_min)])
-    std = 255 / np.array([d0_max - d0_min, d1_max - d1_min, d2_max -d2_min])
+    mean = tuple(-255 * np.array([d0_min / (d0_max - d0_min), d1_min / (d1_max - d1_min), d2_min / (d2_max - d2_min)]))
+    std = tuple(255 / np.array([d0_max - d0_min, d1_max - d1_min, d2_max -d2_min]))
     default_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean, std)
