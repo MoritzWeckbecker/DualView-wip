@@ -61,12 +61,11 @@ class CosineFeatureKernelExplainer(Explainer):
 # same as FeatureKernelExplainer, but with negative of l2 distance instead
 class DistanceFeatureKernelExplainer(Explainer):
     name="DistanceFeatureKernelExplainer"
-    @staticmethod #not nice but does the job
-    def distance_norm(t1,t2,p=2):
-        t_out = torch.empty(size=(t1.shape[0],t2.shape[0]))
-        for i in range(t1.shape[0]):
-            for j in range(t2.shape[0]):
-                t_out[i,j]=torch.linalg.vector_norm(t1[i]-t2[j], ord=p)
+    @staticmethod
+    def distance_norm(t1,t2):
+        norm_t1 = torch.norm(t1,p=2,dim=1).square().unsqueeze(1).repeat(1, t2.shape[0])
+        norm_t2 = torch.norm(t2,p=2,dim=1).square().unsqueeze(0).repeat(t1.shape[0], 1)
+        t_out = norm_t1 + norm_t2 - 2 * t1 @ t2.T
         return t_out
 
     def __init__(self, model, dataset, device, file=None,normalize=True):
