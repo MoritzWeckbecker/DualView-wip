@@ -141,7 +141,7 @@ class ResNet(nn.Module):
         width_per_group=64,
         replace_stride_with_dilation=None,
         norm_layer=None,
-        #cifar=False
+        #cifar=True
     ):
         super(ResNet, self).__init__()
         if norm_layer is None:

@@ -73,14 +73,11 @@ class BasicModel(Module):
         x = self.features(x)
         return self.classifier(x)
 
+    def influence_named_parameters(self):
+       return [("classifier.weight", self.classifier.weight)]
+
     def sim_parameters(self):
         return self.parameters()
-
-    def xpl_parameters(self):
-        return [self.classifier.weight]
-
-    def xpl_named_parameters(self):
-        return [("classifier.weight", self.classifier.weight)]
 
 
 class BasicConvModel(BasicModel):
@@ -110,7 +107,6 @@ class BasicConvModel(BasicModel):
             leaky=leaky,
             input_shape=input_shape
         )
-
 
 class CIFARResNet(Module):
     def __init__(self, model, device):
@@ -146,14 +142,10 @@ class CIFARResNet(Module):
         x = self.classifier(x)
         return x
 
-    def if_parameters(self):
-        # return self.parameters()
-        return [self.classifier.weight]
-
     def sim_parameters(self):
         return self.parameters()
 
-    def if_named_parameters(self):
+    def influence_named_parameters(self):
         return [("classifier.weight", self.classifier.weight)]
     
 class AWAResNet(Module):
@@ -190,12 +182,8 @@ class AWAResNet(Module):
         x = self.classifier(x)
         return x
 
-    def if_parameters(self):
-        # return self.parameters()
-        return [self.classifier.weight]
-
     def sim_parameters(self):
         return self.parameters()
 
-    def if_named_parameters(self):
+    def influence_named_parameters(self):
         return [("classifier.weight", self.classifier.weight)]
