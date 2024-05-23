@@ -65,9 +65,9 @@ def load_surrogate(model_name, model_path, device,
     if xai_method == "dualview":
         explainer.read_variables()
         explainer.compute_coefficients()
-        w1 = explainer.learned_weight
-        w2 = explainer.coefficients.float().T @ explainer.samples
-        print(((w1 - w2) / w1).abs().mean().item())
+        #w1 = explainer.learned_weight
+        #w2 = explainer.coefficients.float().T @ explainer.samples / 2 #for some reason we need to divide by 2 here, check the C code
+        #print(((w1 - w2) / w1).abs().mean().item())
     else:
         explainer.train()
     if C_margin is not None:
@@ -75,11 +75,7 @@ def load_surrogate(model_name, model_path, device,
     print(f"Checking surrogate faithfulness of {explainer_cls.name}")
 
     model_weights = model.classifier.weight.detach() #and bias?
-    if xai_method == "dualview":
-        #surrogate_weights = (explainer.coefficients.float().T @ explainer.samples)
-        surrogate_weights = explainer.learned_weight
-    else:
-        surrogate_weights = explainer.learned_weight
+    surrogate_weights = explainer.learned_weight
     loader=torch.utils.data.DataLoader(train, len(train), shuffle=False) #concat train and test and check activations on both
     x, y = next(iter(loader)) #tqdm.tqdm(loader)
     model_logits = model(x).detach()
