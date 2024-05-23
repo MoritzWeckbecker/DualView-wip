@@ -24,7 +24,7 @@ class CIFAR(CIFAR10):
             transform=None,
             inv_transform=None,
             target_transform=None,
-            download=False,
+            download=True,
             validation_size=2000
     ):
         if transform is None:
@@ -54,7 +54,7 @@ class CIFAR(CIFAR10):
             print(self.val_ids)
             print("Test ids:")
             print(self.test_ids)
-            self.test_targets=self.targets.clone().detach()[self.test_ids]
+            self.test_targets=torch.tensor(self.targets).clone().detach()[self.test_ids]
 
 
     def __getitem__(self, item):
