@@ -15,8 +15,8 @@ class SimilarityExplainer(GradientProductExplainer):
     def train(self):
         return 0.
 
-    def explain(self, x, preds, targets=None):
-        xpl=super().explain(x=x, preds=preds)
+    def explain(self, x, xpl_targets):
+        xpl=super().explain(x=x, xpl_targets=xpl_targets)
         return xpl#/self.norms[None,:]
 
 class RPSimilarityExplainer(Explainer):
@@ -76,10 +76,10 @@ class RPSimilarityExplainer(Explainer):
             train_grads[i]=grad/grad.norm()
         return train_grads
 
-    def explain(self, x, preds, targets):
+    def explain(self, x, xpl_targets):
         xpl=torch.empty(x.shape[0],len(self.dataset),device=self.device)
         for i in tqdm(range(x.shape[0])):
-            test_grad=self.get_param_grad(x[i],preds[i])
+            test_grad=self.get_param_grad(x[i],xpl_targets[i])
             xpl[i]=torch.matmul(self.train_grads,test_grad)
         return xpl
 

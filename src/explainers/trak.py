@@ -29,12 +29,12 @@ class TRAK(Explainer):
             self.traker.featurize(batch=batch,inds=torch.tensor([i*self.batch_size+j for j in range(self.batch_size)]))
         self.traker.finalize_features()
 
-    def explain(self, x, preds=None, targets=None):
+    def explain(self, x, xpl_targets):
         x=x.to(self.device)
         self.traker.start_scoring_checkpoint(model_id=0,
                                              checkpoint=self.model.state_dict(),
                                              exp_name='test',
                                             num_targets=x.shape[0])
-        self.traker.score(batch=(x,preds), num_samples=x.shape[0])
+        self.traker.score(batch=(x,xpl_targets), num_samples=x.shape[0])
         return torch.from_numpy(self.traker.finalize_scores(exp_name='test')).T.to(self.device)
 
