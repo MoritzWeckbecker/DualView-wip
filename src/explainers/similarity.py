@@ -6,19 +6,6 @@ from math import sqrt
 from utils.data import ReduceLabelDataset, CorruptLabelDataset, GroupLabelDataset, MarkDataset
 from utils.explainers import GradientProductExplainer, Explainer
 
-class SimilarityExplainer(GradientProductExplainer):
-    name = "SimilarityExplainer"
-
-    def __init__(self,model,dataset,device):
-        super().__init__(model,dataset,device,loss=None)
-
-    def train(self):
-        return 0.
-
-    def explain(self, x, xpl_targets):
-        xpl=super().explain(x=x, xpl_targets=xpl_targets)
-        return xpl#/self.norms[None,:]
-
 class RPSimilarityExplainer(Explainer):
     name="RPSimilarityExplainer"
     def __init__(self,model,dataset,dir,dimensions,device):
