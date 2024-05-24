@@ -1,7 +1,7 @@
 import argparse
 import math
 import logging
-from models import BasicConvModel, BasicFCModel
+from models import BasicConvModel
 import os
 import json
 import sys

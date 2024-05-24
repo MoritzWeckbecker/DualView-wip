@@ -10,7 +10,7 @@ def load_metric(dataset_type, train, test, device, coef_root, model):
     ret_dict = {"std": SameClassMetric, "group": SameSubclassMetric, "corrupt": CorruptLabelMetric,
                 "mark": MarkImageMetric,
                 "stdk": TopKSameClassMetric, "groupk": TopKSameSubclassMetric,
-                "switched": SwitchMetric}
+                "switched": SwitchMetric, "add_batch_in": CumAddBatchIn}
     if dataset_type not in ret_dict.keys():
         return SameClassMetric(train, test, device)
     metric_cls = ret_dict[dataset_type]
@@ -20,6 +20,8 @@ def load_metric(dataset_type, train, test, device, coef_root, model):
         ret = metric_cls(train, test, model, device)
     elif dataset_type == "switched":
         ret = metric_cls(device)
+    elif dataset_type == "add_batch_in":
+        ret = metric_cls(train, test, model, device=device)
     else:
         ret = metric_cls(train, test, device=device)
     return ret
@@ -28,7 +30,7 @@ def load_metric(dataset_type, train, test, device, coef_root, model):
 def evaluate(model_name, model_path, device, class_groups,
              dataset_name, dataset_type,
              data_root, xpl_root, coef_root,
-             save_dir, validation_size, num_classes):
+             save_dir, validation_size, num_classes, from_checkpoint=True):
     if not torch.cuda.is_available():
         device="cpu"
     ds_kwargs = {
@@ -43,8 +45,9 @@ def evaluate(model_name, model_path, device, class_groups,
         model = load_cifar_model(model_path, dataset_type, num_classes, device)
     else:
         model = load_model(model_name, dataset_name, num_classes).to(device)
-        checkpoint = torch.load(model_path, map_location=device)
-        model.load_state_dict(checkpoint["model_state"])
+        if dataset_type != "add_batch_in":
+            checkpoint = torch.load(model_path, map_location=device)
+            model.load_state_dict(checkpoint["model_state"])
     model.to(device)
     model.eval()
     metric = load_metric(dataset_type, train, test, device, coef_root, model)

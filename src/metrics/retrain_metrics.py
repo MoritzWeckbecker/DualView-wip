@@ -9,13 +9,13 @@ from tqdm import tqdm
 class RetrainMetric(Metric):
     name = "RetrainMetric"
     
-    def __init__(self, train, test, model, device="cuda"):
+    def __init__(self, train, test, model, device):
         self.train = train
         self.test = test
         self.model = model #load model WITHOUT checkpoint in evaluate script for this metric!
         self.device = device
 
-    def load_retraining_parameters(self): #only for know, this will need to be loaded
+    def load_retraining_parameters(self): #only for now, this will need to be loaded depending on the model
         self.num_classes = 10
         self.epochs = 5
         self.batch_size = 64
@@ -25,8 +25,7 @@ class RetrainMetric(Metric):
         self.scheduler = None
         self.loss = None
 
-    def retrain(self, ds, num_classes, epochs, batch_size, lr,
-                augmentation, optimizer, scheduler, loss):
+    def retrain(self, ds):
         #tensorboarddir = f"{model_name}_{lr}_{scheduler}_{optimizer}{f'_aug' if augmentation is not None else ''}"
         #tensorboarddir = os.path.join(save_dir, tensorboarddir)
         #writer = SummaryWriter(tensorboarddir)
@@ -39,10 +38,10 @@ class RetrainMetric(Metric):
         #val_acc = []
         train_acc = []
         loss=load_loss()
-        optimizer = load_optimizer(optimizer, model, lr)
-        scheduler = load_scheduler(scheduler, optimizer)
-        if augmentation is not None:
-            augmentation = load_augmentation(augmentation)
+        optimizer = load_optimizer(self.optimizer, model, self.lr)
+        scheduler = load_scheduler(self.scheduler, optimizer)
+        if self.augmentation is not None:
+            augmentation = load_augmentation(self.augmentation)
 
         #kwargs = {
         #    'data_root': data_root,
@@ -54,7 +53,7 @@ class RetrainMetric(Metric):
             
         #corrupt = (dataset_type == "corrupt")
         #group = (dataset_type == "group")
-        loader = DataLoader(ds, batch_size=batch_size, shuffle=True)
+        loader = DataLoader(ds, batch_size=32, shuffle=True)
         #saved_files = []
 
         #if model_path is not None:
@@ -85,16 +84,16 @@ class RetrainMetric(Metric):
 
         #if not os.path.isdir(save_dir):
         #    os.makedirs(save_dir,exist_ok=True)
-        for e in range(epochs):
+        for e in range(self.epochs):
             y_true = torch.empty(0, device=self.device)
-            y_out = torch.empty((0, num_classes), device=self.device)
+            y_out = torch.empty((0, self.num_classes), device=self.device)
             cum_loss = 0
             cnt = 0
             for inputs, targets in tqdm(iter(loader)):
                 inputs = inputs.to(self.device)
                 targets = targets.to(self.device)
             
-                if augmentation is not None:
+                if self.augmentation is not None:
                     inputs=augmentation(inputs)
 
                 y_true = torch.cat((y_true, targets), 0)
@@ -142,7 +141,7 @@ class RetrainMetric(Metric):
             #writer.add_scalar('Metric/learning_rates', 0.95, base_epoch + e)
             train_losses.append(train_loss)
             #writer.add_scalar('Loss/train', train_loss, base_epoch + e)
-            print(f"Epoch {e + 1}/{epochs} loss: {cum_loss}")  # / cnt}")
+            print(f"Epoch {e + 1}/{self.epochs} loss: {cum_loss}")  # / cnt}")
             print("\n==============\n")
             learning_rates.append(scheduler.get_lr())
             scheduler.step()
@@ -176,7 +175,7 @@ class RetrainMetric(Metric):
 
                 print(f"\n\nValidation loss: {validation_loss}\n\n")
                 #writer.add_scalar('Loss/val', validation_loss, base_epoch + e)
-                valeval = evaluate_model(model_name=model_name, device=device, num_classes=num_classes,
+                valeval = evaluate_model(model_name=model_name, device=device, num_classes=self.num_classes,
                                         data_root=data_root,
                                         batch_size=batch_size, num_batches_to_process=num_batches_eval,
                                         load_path=best_model_yet, dataset_name=dataset_name, dataset_type=dataset_type,
@@ -199,13 +198,13 @@ class RetrainMetric(Metric):
         #save_id = os.path.basename(best_model_yet)
         return model
     
-    def evaluate(self, retrained_model, evalds, batch_size, num_classes, num_batches_to_process):
+    def evaluate(self, retrained_model, evalds, num_classes, batch_size=20):
         retrained_model.eval()
         loader = DataLoader(evalds, batch_size=batch_size, shuffle=True)
         y_true = torch.empty(0, device=self.device)
-        y_out = torch.empty((0, num_classes), device=self.device)
+        y_out = torch.empty((0, self.num_classes), device=self.device)
 
-        for i, (inputs, targets) in enumerate(tqdm(iter(loader), total=min(num_batches_to_process, len(loader)))):
+        for i, (inputs, targets) in enumerate(tqdm(iter(loader), total=len(loader))):
             inputs = inputs.to(self.device)
             targets = targets.to(self.device)
             y_true = torch.cat((y_true, targets), 0)
@@ -219,34 +218,37 @@ class RetrainMetric(Metric):
     
 
     
-class LeaveBatchOut(RetrainMetric):
-    name = "LeaveBatchOutMetric"
+class CumAddBatchIn(RetrainMetric):
+    name = "CumAddBatchIn"
 
-    def __init__(self, train, test, num_classes, model, batch_nr=10, device="cuda"):
-        self.train = train
-        self.test = test
+    def __init__(self, train, test, model, num_classes=10, batch_nr=10, device="cuda"):
+        super().__init__(train, test, model, device)
         self.num_classes = num_classes
-        self.model = model
-        self.scores = torch.empty(batch_nr, dtype=torch.float, device=device)
+        self.scores = torch.empty(0, dtype=torch.float, device=device)
         self.batch_nr = batch_nr
         self.batchsize = len(self.train) // batch_nr
-        self.device = device
         self.load_retraining_parameters()
 
-    def __call__(self, xpl):
+    def __call__(self, xpl, start_index):
+        curr_score=torch.empty(self.batch_nr, dtype=torch.float, device=self.device)
         xpl.to(self.device)
+        xpl_len = len(xpl)
         combined_xpl = xpl.sum(dim=0)
         indices_sorted = combined_xpl.argsort(descending=True)
+        evalds = RestrictedDataset(self.test, range(start_index, start_index+xpl_len))
         for i in range(self.batch_nr):
-            ds = RestrictedDataset(self.train, indices_sorted[:(i+1)*self.batchsize], return_indices=True)
-            evalds = self.test
-            retrained_model = self.retrain(ds, )
-            eval_accuracy = self.evaluate(retrained_model, evalds, batch_size=self.batchsize, num_classes=self.num_classes, num_batches_to_process=self.batch_nr)
-            self.scores[i] = eval_accuracy
+            ds = RestrictedDataset(self.train, indices_sorted[:(i+1)*self.batchsize])
+            retrained_model = self.retrain(ds)
+            eval_accuracy = self.evaluate(retrained_model, evalds, num_classes=self.num_classes)
+            curr_score[i] = eval_accuracy
+        self.scores = torch.cat((self.scores, curr_score), 0)
+        
 
     def get_result(self, dir=None, file_name=None):
+        avg_scores = self.scores.mean(dim=0).to('cpu').detach().numpy()
         self.scores = self.scores.to('cpu').detach().numpy()
-        resdict = {'metric': self.name, 'all_scores': self.scores, 'score_for_most_relevant_batch': self.scores[0],
+        resdict = {'metric': self.name, 'all_batch_scores': self.scores, 'all_batch_scores_avg': avg_scores,
+                   'scores_for_most_relevant_batch': self.scores[0], 'score_for_most_relevant_batch_avg': avg_scores[0],
                    'num_batches': self.scores.shape[0]}
         if dir is not None:
             self.write_result(resdict, dir, file_name)
