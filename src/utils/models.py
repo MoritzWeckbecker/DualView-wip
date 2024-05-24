@@ -75,7 +75,7 @@ def load_awa_model(model_path,dataset_type,num_classes,device):
     model=resnet50(model_path)
     model.fc = torch.nn.Linear(in_features=model.fc.in_features, out_features=num_classes, bias=False)
     checkpoint = torch.load(model_path, map_location=device)
-    model.load_state_dict(checkpoint['state_dict'])
+    model.load_state_dict(checkpoint)
     model.eval()
     return AWAResNet(model,device=device)
 
