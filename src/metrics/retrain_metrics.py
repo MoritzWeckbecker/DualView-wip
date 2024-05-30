@@ -232,10 +232,9 @@ class CumAddBatchIn(RetrainMetric):
     def __call__(self, xpl, start_index):
         curr_score=torch.empty(self.batch_nr, dtype=torch.float, device=self.device)
         xpl.to(self.device)
-        xpl_len = len(xpl)
         combined_xpl = xpl.sum(dim=0)
         indices_sorted = combined_xpl.argsort(descending=True)
-        evalds = RestrictedDataset(self.test, range(start_index, start_index+xpl_len))
+        evalds = self.test
         for i in range(self.batch_nr):
             ds = RestrictedDataset(self.train, indices_sorted[:(i+1)*self.batchsize])
             retrained_model = self.retrain(ds)
@@ -269,7 +268,6 @@ class CumAddBatchInDescending(RetrainMetric):
     def __call__(self, xpl):
         curr_score=torch.empty(self.batch_nr, dtype=torch.float, device=self.device)
         xpl.to(self.device)
-        xpl_len = len(xpl)
         combined_xpl = xpl.sum(dim=0)
         indices_sorted = combined_xpl.argsort(descending=False)
         evalds = self.test
@@ -305,7 +303,6 @@ class LeaveBatchOut(RetrainMetric):
     def __call__(self, xpl):
         curr_score=torch.empty(self.batch_nr, dtype=torch.float, device=self.device)
         xpl.to(self.device)
-        xpl_len = len(xpl)
         combined_xpl = xpl.sum(dim=0)
         indices_sorted = combined_xpl.argsort(descending=False)
         evalds = self.test
@@ -341,7 +338,6 @@ class LinearDatamodelingScore(RetrainMetric):
     def __call__(self, xpl):
         curr_score=torch.empty(self.batch_nr, dtype=torch.float, device=self.device)
         xpl.to(self.device)
-        xpl_len = len(xpl)
         combined_xpl = xpl.sum(dim=0)
         indices_sorted = combined_xpl.argsort(descending=False)
         evalds = self.test
