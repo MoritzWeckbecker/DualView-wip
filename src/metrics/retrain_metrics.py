@@ -319,7 +319,7 @@ class LeaveBatchOut(RetrainMetric):
         indices_sorted = combined_xpl.argsort(descending=True)
         evalds = self.test
         for i in range(self.batch_nr):
-            ds = RestrictedDataset(self.train, torch.cat((indices_sorted[:i*self.batchsize], indices_sorted[(i+1)*self.batchsize:]))
+            ds = RestrictedDataset(self.train, torch.cat((indices_sorted[:i*self.batchsize], indices_sorted[(i+1)*self.batchsize:])))
             retrained_model = self.retrain(ds)
             eval_accuracy = self.evaluate(retrained_model, evalds, num_classes=self.num_classes)
             curr_score[i] = eval_accuracy
