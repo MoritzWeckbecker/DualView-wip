@@ -260,9 +260,9 @@ class CumAddBatchIn(RetrainMetric):
             self.write_result(resdict, dir, file_name)
         return resdict
 
-class CumAddBatchInDescending(RetrainMetric):
+class CumAddBatchInNeg(RetrainMetric):
     # Add batches in from highest negative relevance to highest positive relevance
-    name = "CumAddBatchInDescending"
+    name = "CumAddBatchInNeg"
 
     def __init__(self, train, test, model, num_classes=10, batch_nr=10, device="cuda"):
         super().__init__(train, test, model, device)
@@ -316,10 +316,50 @@ class LeaveBatchOut(RetrainMetric):
         curr_score=torch.empty(self.batch_nr, dtype=torch.float, device=self.device)
         xpl.to(self.device)
         combined_xpl = xpl.sum(dim=0)
-        indices_sorted = combined_xpl.argsort(descending=False)
+        indices_sorted = combined_xpl.argsort(descending=True)
         evalds = self.test
         for i in range(self.batch_nr):
             ds = RestrictedDataset(self.train, indices_sorted[:i*self.batchsize] + indices_sorted[(i+1)*self.batchsize:])
+            retrained_model = self.retrain(ds)
+            eval_accuracy = self.evaluate(retrained_model, evalds, num_classes=self.num_classes)
+            curr_score[i] = eval_accuracy
+        self.scores = torch.cat((self.scores, curr_score), 0)
+        
+
+    def get_result(self, dir=None, file_name=None):
+        # USE THIS WHEN MULTIPLE FILES FOR DIFFERENT XPL ARE READ IN
+        #avg_scores = self.scores.mean(dim=0).to('cpu').detach().numpy()
+        #self.scores = self.scores.to('cpu').detach().numpy()
+        #resdict = {'metric': self.name, 'all_batch_scores': self.scores, 'all_batch_scores_avg': avg_scores,
+        #           'scores_for_most_relevant_batch': self.scores[0], 'score_for_most_relevant_batch_avg': avg_scores[0],
+        #           'num_batches': self.scores.shape[0]}
+        self.scores = self.scores.to('cpu').detach().numpy()
+        resdict = {'metric': self.name, 'all_batch_scores': self.scores,
+                   'scores_for_most_relevant_batch': self.scores[0],
+                   'num_batches': self.scores.shape}
+        if dir is not None:
+            self.write_result(resdict, dir, file_name)
+        return resdict
+    
+class OnlyBatch(RetrainMetric):
+    name = "OnlyBatch"
+
+    def __init__(self, train, test, model, num_classes=10, batch_nr=10, device="cuda"):
+        super().__init__(train, test, model, device)
+        self.num_classes = num_classes
+        self.scores = torch.empty(0, dtype=torch.float, device=device)
+        self.batch_nr = batch_nr
+        self.batchsize = len(self.train) // batch_nr
+        self.load_retraining_parameters()
+
+    def __call__(self, xpl):
+        curr_score=torch.empty(self.batch_nr, dtype=torch.float, device=self.device)
+        xpl.to(self.device)
+        combined_xpl = xpl.sum(dim=0)
+        indices_sorted = combined_xpl.argsort(descending=True)
+        evalds = self.test
+        for i in range(self.batch_nr):
+            ds = RestrictedDataset(self.train, indices_sorted[i*self.batchsize:(i+1)*self.batchsize])
             retrained_model = self.retrain(ds)
             eval_accuracy = self.evaluate(retrained_model, evalds, num_classes=self.num_classes)
             curr_score[i] = eval_accuracy
