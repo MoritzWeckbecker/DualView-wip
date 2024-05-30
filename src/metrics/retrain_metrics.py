@@ -5,6 +5,8 @@ import copy
 from utils.data import RestrictedDataset
 from train import load_loss, load_optimizer, load_scheduler, load_augmentation
 from tqdm import tqdm
+import numpy as np
+from torchmetrics.regression import SpearmanCorrCoef
 
 class RetrainMetric(Metric):
     name = "RetrainMetric"
@@ -229,7 +231,7 @@ class CumAddBatchIn(RetrainMetric):
         self.batchsize = len(self.train) // batch_nr
         self.load_retraining_parameters()
 
-    def __call__(self, xpl, start_index):
+    def __call__(self, xpl):
         curr_score=torch.empty(self.batch_nr, dtype=torch.float, device=self.device)
         xpl.to(self.device)
         combined_xpl = xpl.sum(dim=0)
@@ -327,34 +329,34 @@ class LeaveBatchOut(RetrainMetric):
 class LinearDatamodelingScore(RetrainMetric):
     name = "LinearDatamodelingScore"
 
-    def __init__(self, train, test, model, num_classes=10, batch_nr=10, device="cuda"):
+    def __init__(self, train, test, model, num_classes=10, alpha=0.2, samples=10, device="cuda"):
         super().__init__(train, test, model, device)
         self.num_classes = num_classes
-        self.scores = torch.empty(0, dtype=torch.float, device=device)
-        self.batch_nr = batch_nr
-        self.batchsize = len(self.train) // batch_nr
+        self.alpha = alpha
+        self.samples = samples
+        self.sample_attributions = np.empty(samples)
+        self.sample_accuracies = np.empty(samples)
         self.load_retraining_parameters()
 
     def __call__(self, xpl):
-        curr_score=torch.empty(self.batch_nr, dtype=torch.float, device=self.device)
         xpl.to(self.device)
         combined_xpl = xpl.sum(dim=0)
-        indices_sorted = combined_xpl.argsort(descending=False)
         evalds = self.test
-        for i in range(self.batch_nr):
-            ds = RestrictedDataset(self.train, indices_sorted[:i*self.batchsize] + indices_sorted[(i+1)*self.batchsize:])
+        for i in range(self.samples):
+            sample_indices = np.random.choice(len(combined_xpl), size= int(self.alpha * len(combined_xpl)), replace=False)
+            sample_attribution = combined_xpl[sample_indices].sum()
+            ds = RestrictedDataset(self.train, sample_indices)
             retrained_model = self.retrain(ds)
             eval_accuracy = self.evaluate(retrained_model, evalds, num_classes=self.num_classes)
-            curr_score[i] = eval_accuracy
-        self.scores = torch.cat((self.scores, curr_score), 0)
+
+            self.sample_attributions[i] = sample_attribution
+            self.sample_accuracies[i] = eval_accuracy
         
 
     def get_result(self, dir=None, file_name=None):
-        avg_scores = self.scores.mean(dim=0).to('cpu').detach().numpy()
-        self.scores = self.scores.to('cpu').detach().numpy()
-        resdict = {'metric': self.name, 'all_batch_scores': self.scores, 'all_batch_scores_avg': avg_scores,
-                   'scores_for_most_relevant_batch': self.scores[0], 'score_for_most_relevant_batch_avg': avg_scores[0],
-                   'num_batches': self.scores.shape[0]}
+        spearman = SpearmanCorrCoef()
+        resdict = {'metric': self.name, 'sample attributions': self.sample_attributions, 'sample accuracies': self.sample_accuracies,
+                   'correlation score': spearman(self.sample_attributions, self.sample_accuracies)}
         if dir is not None:
             self.write_result(resdict, dir, file_name)
         return resdict
