@@ -246,11 +246,16 @@ class CumAddBatchIn(RetrainMetric):
         
 
     def get_result(self, dir=None, file_name=None):
-        avg_scores = self.scores.mean(dim=0).to('cpu').detach().numpy()
+        # USE THIS WHEN MULTIPLE FILES FOR DIFFERENT XPL ARE READ IN
+        #avg_scores = self.scores.mean(dim=0).to('cpu').detach().numpy()
+        #self.scores = self.scores.to('cpu').detach().numpy()
+        #resdict = {'metric': self.name, 'all_batch_scores': self.scores, 'all_batch_scores_avg': avg_scores,
+        #           'scores_for_most_relevant_batch': self.scores[0], 'score_for_most_relevant_batch_avg': avg_scores[0],
+        #           'num_batches': self.scores.shape[0]}
         self.scores = self.scores.to('cpu').detach().numpy()
-        resdict = {'metric': self.name, 'all_batch_scores': self.scores, 'all_batch_scores_avg': avg_scores,
-                   'scores_for_most_relevant_batch': self.scores[0], 'score_for_most_relevant_batch_avg': avg_scores[0],
-                   'num_batches': self.scores.shape[0]}
+        resdict = {'metric': self.name, 'all_batch_scores': self.scores,
+                   'scores_for_most_relevant_batch': self.scores[0],
+                   'num_batches': self.scores.shape}
         if dir is not None:
             self.write_result(resdict, dir, file_name)
         return resdict
@@ -282,11 +287,16 @@ class CumAddBatchInDescending(RetrainMetric):
         
 
     def get_result(self, dir=None, file_name=None):
-        avg_scores = self.scores.mean(dim=0).to('cpu').detach().numpy()
+        # USE THIS WHEN MULTIPLE FILES FOR DIFFERENT XPL ARE READ IN
+        #avg_scores = self.scores.mean(dim=0).to('cpu').detach().numpy()
+        #self.scores = self.scores.to('cpu').detach().numpy()
+        #resdict = {'metric': self.name, 'all_batch_scores': self.scores, 'all_batch_scores_avg': avg_scores,
+        #           'scores_for_most_relevant_batch': self.scores[0], 'score_for_most_relevant_batch_avg': avg_scores[0],
+        #           'num_batches': self.scores.shape[0]}
         self.scores = self.scores.to('cpu').detach().numpy()
-        resdict = {'metric': self.name, 'all_batch_scores': self.scores, 'all_batch_scores_avg': avg_scores,
-                   'scores_for_most_relevant_batch': self.scores[0], 'score_for_most_relevant_batch_avg': avg_scores[0],
-                   'num_batches': self.scores.shape[0]}
+        resdict = {'metric': self.name, 'all_batch_scores': self.scores,
+                   'scores_for_most_relevant_batch': self.scores[0],
+                   'num_batches': self.scores.shape}
         if dir is not None:
             self.write_result(resdict, dir, file_name)
         return resdict
@@ -317,11 +327,16 @@ class LeaveBatchOut(RetrainMetric):
         
 
     def get_result(self, dir=None, file_name=None):
-        avg_scores = self.scores.mean(dim=0).to('cpu').detach().numpy()
+        # USE THIS WHEN MULTIPLE FILES FOR DIFFERENT XPL ARE READ IN
+        #avg_scores = self.scores.mean(dim=0).to('cpu').detach().numpy()
+        #self.scores = self.scores.to('cpu').detach().numpy()
+        #resdict = {'metric': self.name, 'all_batch_scores': self.scores, 'all_batch_scores_avg': avg_scores,
+        #           'scores_for_most_relevant_batch': self.scores[0], 'score_for_most_relevant_batch_avg': avg_scores[0],
+        #           'num_batches': self.scores.shape[0]}
         self.scores = self.scores.to('cpu').detach().numpy()
-        resdict = {'metric': self.name, 'all_batch_scores': self.scores, 'all_batch_scores_avg': avg_scores,
-                   'scores_for_most_relevant_batch': self.scores[0], 'score_for_most_relevant_batch_avg': avg_scores[0],
-                   'num_batches': self.scores.shape[0]}
+        resdict = {'metric': self.name, 'all_batch_scores': self.scores,
+                   'scores_for_most_relevant_batch': self.scores[0],
+                   'num_batches': self.scores.shape}
         if dir is not None:
             self.write_result(resdict, dir, file_name)
         return resdict
