@@ -319,7 +319,7 @@ class LeaveBatchOut(RetrainMetric):
         indices_sorted = combined_xpl.argsort(descending=True)
         evalds = self.test
         for i in range(self.batch_nr):
-            ds = RestrictedDataset(self.train, indices_sorted[:i*self.batchsize] + indices_sorted[(i+1)*self.batchsize:])
+            ds = RestrictedDataset(self.train, torch.cat((indices_sorted[:i*self.batchsize], indices_sorted[(i+1)*self.batchsize:]))
             retrained_model = self.retrain(ds)
             eval_accuracy = self.evaluate(retrained_model, evalds, num_classes=self.num_classes)
             curr_score[i] = eval_accuracy
@@ -411,7 +411,7 @@ class LinearDatamodelingScore(RetrainMetric):
     def get_result(self, dir=None, file_name=None):
         spearman = SpearmanCorrCoef()
         resdict = {'metric': self.name, 'sample attributions': self.sample_attributions, 'sample accuracies': self.sample_accuracies,
-                   'correlation score': spearman(self.sample_attributions, self.sample_accuracies)}
+                   'correlation score': spearman(torch.from_numpy(self.sample_attributions), torch.from_numpy(self.sample_accuracies))}
         if dir is not None:
             self.write_result(resdict, dir, file_name)
         return resdict
